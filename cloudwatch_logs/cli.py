@@ -27,10 +27,12 @@ def _main(log_group, hours:float=None, follow=False, poll_freq_limit=5):
             last_ingest = s['lastIngestionTime']
         for x in streams['logStreams']:
             age = now - datetime.datetime.fromtimestamp(x['creationTime'] / 1000)
-            if age.seconds >= max_age:
+            if age.total_seconds() >= max_age:
                 done = True
                 break
             seed.append(x)
+        if 'nextToken' not in streams:
+            break
         next_token = streams['nextToken']
     print_events(reversed(seed), log_group)
     if follow:
@@ -60,8 +62,13 @@ def fmt_event(x):
         return
     dt = datetime.datetime.fromtimestamp(x['timestamp'] / 1000)
     pretty_date = dt.strftime(f'%Y-%m-%d %I:%M:%S.{round(dt.microsecond / 1000):03} %p')
-    [_, _, level, message] = msg.split('\t', 4)
-    return f'{pretty_date} [{level}] {message.rstrip()}'
+    msg_parts = msg.split('\t', 3)
+    if len(msg_parts) == 4:
+        [_, _, level, message] = msg_parts
+        return f'{pretty_date} [{level}] {message.rstrip()}'
+    else:
+        # continuation line
+        return msg.rstrip()
 
 
 def print_events(streams, log_group, _last_event=[0]):
