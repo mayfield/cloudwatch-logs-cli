@@ -42,8 +42,8 @@ def _main(log_group, hours:float=None, follow=False, poll_freq_limit=5):
             resp = awslogs.describe_log_streams(logGroupName=log_group,
                                                 orderBy='LastEventTime',
                                                 descending=True,
-                                                limit=limit, **kwargs)
-            limit = max(2, limit - 10)
+                                                limit=limit)
+            limit = max(3, limit - 10)
             streams = [x for x in resp['logStreams'] if x['lastIngestionTime'] > last_ingest]
             if streams:
                 last_ingest = streams[0]['lastIngestionTime']
